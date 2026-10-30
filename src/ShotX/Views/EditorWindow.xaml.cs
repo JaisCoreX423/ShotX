@@ -324,9 +324,12 @@ public partial class EditorWindow : Window
     /// to this feature and needs no separate harness.</summary>
     public void SimulateTypeToEditShapeForTesting(string firstChar)
     {
+        // Deliberately does NOT switch to the Select tool first — a freshly drawn shape stays
+        // selected while its drawing tool (Rectangle/Ellipse) is still the active one, which is
+        // exactly the real scenario the Select-tool-only check used to miss.
         var rect = _canvas.Annotations.FirstOrDefault(a => a.Type == ToolType.Rectangle);
         if (rect == null) return;
-        SelectTool(ToolType.Select);
+        _canvas.CurrentTool = ToolType.Rectangle;
         _canvas.SelectAnnotationExternally(rect);
 
         var composition = new TextComposition(InputManager.Current, this, firstChar);
@@ -1367,7 +1370,7 @@ public partial class EditorWindow : Window
     protected override void OnPreviewTextInput(TextCompositionEventArgs e)
     {
         if (TextInputBox.Visibility != Visibility.Visible
-            && _canvas.CurrentTool == ToolType.Select
+            && _canvas.CurrentTool != ToolType.Text
             && _canvas.Selected is { Locked: false } selected
             && Array.IndexOf(TypableShapeTypes, selected.Type) >= 0
             && !string.IsNullOrEmpty(e.Text) && e.Text != "\r" && e.Text != "\u001b" && e.Text != "\t")
