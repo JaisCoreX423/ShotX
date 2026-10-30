@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Content Include="Assets\shotx.ico" />
+    <Resource Include="Assets\shotx-256.png" />
   </ItemGroup>
 
 </Project>

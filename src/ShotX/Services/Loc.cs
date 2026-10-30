@@ -94,6 +94,7 @@ public static class Loc
         ["editor.saveFailed"] = ("No se pudo guardar la imagen", "Could not save the image"),
         ["editor.unsavedChanges"] = ("Hay cambios sin guardar. ¿Cerrar de todos modos?",
             "There are unsaved changes. Close anyway?"),
+        ["editor.unsaved"] = ("sin guardar", "unsaved"),
         ["editor.applyCrop"] = ("Aplicar recorte", "Apply crop"),
         ["editor.cancel"] = ("Cancelar", "Cancel"),
 
@@ -150,5 +151,6 @@ public static class Loc
         ["settings.autoUpdate"] = ("Instalar actualizaciones automáticamente", "Install updates automatically"),
         ["settings.checkUpdates"] = ("Buscar ahora", "Check now"),
         ["settings.installUpdate"] = ("Instalar {0}", "Install {0}"),
+        ["settings.about"] = ("Acerca de", "About"),
     };
 }

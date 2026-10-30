@@ -317,6 +317,26 @@ public partial class EditorWindow : Window
         _canvas.DeleteAnnotationExternally(ellipse);
     }
 
+    /// <summary>Selects a shape and simulates the first keystroke typed into it, exercising the
+    /// real <see cref="OnPreviewTextInput"/> routed-event path (not calling the edit logic
+    /// directly). Only the triggering keystroke is simulated this way — once the box has real
+    /// keyboard focus, further characters go through ordinary TextBox input, which isn't specific
+    /// to this feature and needs no separate harness.</summary>
+    public void SimulateTypeToEditShapeForTesting(string firstChar)
+    {
+        var rect = _canvas.Annotations.FirstOrDefault(a => a.Type == ToolType.Rectangle);
+        if (rect == null) return;
+        SelectTool(ToolType.Select);
+        _canvas.SelectAnnotationExternally(rect);
+
+        var composition = new TextComposition(InputManager.Current, this, firstChar);
+        var e = new TextCompositionEventArgs(InputManager.Current.PrimaryKeyboardDevice, composition)
+        {
+            RoutedEvent = TextCompositionManager.PreviewTextInputEvent
+        };
+        RaiseEvent(e);
+    }
+
     public void AddSampleAnnotationsForTesting()
     {
         _canvas.AddSampleAnnotationsForTesting();
@@ -326,7 +346,7 @@ public partial class EditorWindow : Window
 
     public static EditorWindow ForNewCapture(BitmapSource image)
     {
-        return new EditorWindow(image, $"{image.PixelWidth} × {image.PixelHeight} · sin guardar");
+        return new EditorWindow(image, $"{image.PixelWidth} × {image.PixelHeight} · {Loc.T("editor.unsaved")}");
     }
 
     private void PlayOpenAnimation()
@@ -1337,5 +1357,31 @@ public partial class EditorWindow : Window
             e.Handled = true;
         }
         base.OnPreviewKeyDown(e);
+    }
+
+    private static readonly ToolType[] TypableShapeTypes = { ToolType.Rectangle, ToolType.Ellipse };
+
+    /// <summary>Typing while a rectangle/ellipse is selected (Select tool, nothing already being
+    /// edited) opens its label for editing and starts it off with whatever was just typed — no
+    /// double-click needed first.</summary>
+    protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+    {
+        if (TextInputBox.Visibility != Visibility.Visible
+            && _canvas.CurrentTool == ToolType.Select
+            && _canvas.Selected is { Locked: false } selected
+            && Array.IndexOf(TypableShapeTypes, selected.Type) >= 0
+            && !string.IsNullOrEmpty(e.Text) && e.Text != "\r" && e.Text != "\u001b" && e.Text != "\t")
+        {
+            var typedText = e.Text;
+            OnTextEditRequested(selected);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (TextInputBox.Visibility != Visibility.Visible) return;
+                TextInputBox.Text = typedText;
+                TextInputBox.CaretIndex = TextInputBox.Text.Length;
+            }), System.Windows.Threading.DispatcherPriority.Input);
+            e.Handled = true;
+        }
+        base.OnPreviewTextInput(e);
     }
 }

@@ -499,6 +499,41 @@ public partial class App : Application
             return true;
         }
 
+        if (args.Contains("--test-type-to-edit-shape"))
+        {
+            var image = TestImageFactory.CreateSampleScreenshot();
+            var editor = new EditorWindow(image, "Captura de prueba");
+            editor.Show();
+            editor.AddSampleAnnotationsForTesting();
+            editor.SimulateTypeToEditShapeForTesting("H");
+            editor.ContentRendered += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    DiagSnapshot.Capture(editor, "editor-window-type-to-edit-shape");
+                    Shutdown();
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            };
+            return true;
+        }
+
+        if (args.Contains("--test-unsaved-label-en"))
+        {
+            SettingsService.Current.Language = "en";
+            var image = TestImageFactory.CreateSampleScreenshot();
+            var editor = EditorWindow.ForNewCapture(image);
+            editor.Show();
+            editor.ContentRendered += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    DiagSnapshot.Capture(editor, "editor-window-unsaved-label-en");
+                    Shutdown();
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            };
+            return true;
+        }
+
         if (args.Contains("--test-shape-text"))
         {
             var image = TestImageFactory.CreateSampleScreenshot();
@@ -712,6 +747,21 @@ public partial class App : Application
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     DiagSnapshot.Capture(settingsWindow, "settings-hotkey-duplicate");
+                    Shutdown();
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            };
+            return true;
+        }
+
+        if (args.Contains("--test-settings-about"))
+        {
+            var settingsWindow = new SettingsWindow { Height = 1400 };
+            settingsWindow.Show();
+            settingsWindow.ContentRendered += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    DiagSnapshot.Capture(settingsWindow, "settings-window-about");
                     Shutdown();
                 }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             };

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -69,6 +70,10 @@ public partial class SettingsWindow : Window
         UpdatesHeader.Text = Loc.T("settings.updates");
         AutoUpdateLabel.Text = Loc.T("settings.autoUpdate");
         CheckUpdatesButton.Content = Loc.T("settings.checkUpdates");
+        AboutHeader.Text = Loc.T("settings.about");
+        VersionRun.Text = $" {AppInfo.VersionText}";
+        CreditsText.Text = AppInfo.Credits;
+        RepoLinkButton.Content = AppInfo.RepoUrl.Replace("https://", "");
         CloseButton.ToolTip = Loc.T("window.close");
 
         foreach (var (theme, button) in _themeButtons)
@@ -322,6 +327,9 @@ public partial class SettingsWindow : Window
     private async void OnCheckUpdatesClick(object sender, RoutedEventArgs e) => await UpdateService.Instance.CheckNowAsync();
 
     private async void OnInstallUpdateClick(object sender, RoutedEventArgs e) => await UpdateService.Instance.InstallNowAsync();
+
+    private void OnRepoLinkClick(object sender, RoutedEventArgs e) =>
+        Process.Start(new ProcessStartInfo(AppInfo.RepoUrl) { UseShellExecute = true });
 
     private void SaveIfReady(Action apply)
     {
