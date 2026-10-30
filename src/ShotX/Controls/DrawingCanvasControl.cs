@@ -241,6 +241,19 @@ public class DrawingCanvasControl : FrameworkElement
         Raise();
     }
 
+    private static readonly ToolType[] LabeledShapeTypes = { ToolType.Rectangle, ToolType.Ellipse };
+
+    /// <summary>Sets the color of the label typed inside the selected Rectangle/Ellipse, independent
+    /// of that shape's own outline color (<see cref="ApplyColorToSelection"/>).</summary>
+    public void ApplyLabelColorToSelection(Color color)
+    {
+        if (_selected is not { Locked: false } selected || Array.IndexOf(LabeledShapeTypes, selected.Type) < 0) return;
+
+        PushUndo();
+        selected.LabelColor = color;
+        Raise();
+    }
+
     private static readonly ToolType[] FillableTypes = { ToolType.Text, ToolType.Rectangle, ToolType.Ellipse };
 
     /// <summary>Sets the selected text/rectangle/ellipse layer's fill live (alpha 0 = no fill,
@@ -469,7 +482,7 @@ public class DrawingCanvasControl : FrameworkElement
             case ToolType.Rectangle:
                 if (a.BackgroundColor.A > 0) dc.DrawRoundedRectangle(new SolidColorBrush(a.BackgroundColor), null, a.Bounds, 3, 3);
                 dc.DrawRoundedRectangle(null, pen, a.Bounds, 3, 3);
-                if (!string.IsNullOrEmpty(a.Text)) DrawAlignedText(dc, a, brush, a.Bounds);
+                if (!string.IsNullOrEmpty(a.Text)) DrawAlignedText(dc, a, new SolidColorBrush(a.LabelColor), a.Bounds);
                 break;
 
             case ToolType.Ellipse:
@@ -481,7 +494,7 @@ public class DrawingCanvasControl : FrameworkElement
                     // Inset so text wraps within the ellipse's inscribed rectangle, not its bounding box.
                     var inset = new Rect(a.Bounds.X + a.Bounds.Width * 0.146, a.Bounds.Y + a.Bounds.Height * 0.146,
                         a.Bounds.Width * 0.708, a.Bounds.Height * 0.708);
-                    DrawAlignedText(dc, a, brush, inset);
+                    DrawAlignedText(dc, a, new SolidColorBrush(a.LabelColor), inset);
                 }
                 break;
 

@@ -46,6 +46,10 @@ public class Annotation
     /// Alpha 0 (the default) means none — fully transparent / outline only.</summary>
     public Color BackgroundColor { get; set; } = Colors.Transparent;
 
+    /// <summary>Color of the label typed inside a Rectangle/Ellipse — independent of <see cref="Color"/>,
+    /// which is that shape's outline. Not used by a standalone Text annotation, which uses <see cref="Color"/>.</summary>
+    public Color LabelColor { get; set; } = Color.FromRgb(0x1D, 0x1D, 0x1F);
+
     /// <summary>Pre-rendered pixelated tile, only used by Blur annotations. Rebuilt when Bounds changes.</summary>
     public WriteableBitmap? BlurTile { get; set; }
 
@@ -68,6 +72,7 @@ public class Annotation
             TextHAlign = TextHAlign,
             TextVAlign = TextVAlign,
             BackgroundColor = BackgroundColor,
+            LabelColor = LabelColor,
             BlurTile = BlurTile,
             Image = Image
         };

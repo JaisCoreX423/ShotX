@@ -283,6 +283,19 @@ public partial class EditorWindow : Window
         CommitTextInput();
     }
 
+    /// <summary>Gives a rectangle a label, then sets the label's color to something different from
+    /// its (unchanged) outline color — proving the two are independently editable.</summary>
+    public void SimulateShapeLabelColorForTesting(Color labelColor)
+    {
+        var rect = _canvas.Annotations.FirstOrDefault(a => a.Type == ToolType.Rectangle);
+        if (rect == null) return;
+        OnTextEditRequested(rect);
+        TextInputBox.Text = "Etiqueta";
+        CommitTextInput();
+        _canvas.SelectAnnotationExternally(rect);
+        _canvas.ApplyLabelColorToSelection(labelColor);
+    }
+
     public void SimulateTextAlignForTesting(TextHAlign hAlign, TextVAlign vAlign)
     {
         var shape = _canvas.Annotations.FirstOrDefault(a => a.Type == ToolType.Rectangle && !string.IsNullOrEmpty(a.Text))
@@ -435,7 +448,15 @@ public partial class EditorWindow : Window
                 _currentColor = color;
                 _canvas.StrokeColor = color;
                 if (TextInputBox.Visibility == Visibility.Visible) TextInputBox.Foreground = new SolidColorBrush(color);
-                _canvas.ApplyColorToSelection(color);
+
+                // While editing a shape's label, color changes the label text, not the shape's own
+                // outline — the two are independent, unlike a standalone Text layer, whose outline
+                // and text color are the same thing.
+                if (_editingTextAnnotation is { Type: ToolType.Rectangle or ToolType.Ellipse })
+                    _canvas.ApplyLabelColorToSelection(color);
+                else
+                    _canvas.ApplyColorToSelection(color);
+
                 SettingsService.Current.LastColor = color.ToString();
                 SettingsService.Save();
             };
@@ -1138,7 +1159,8 @@ public partial class EditorWindow : Window
         _textInputOrigin = annotation.Bounds.TopLeft;
         TextInputBox.Text = annotation.Text;
         TextInputBox.FontSize = annotation.FontSize;
-        TextInputBox.Foreground = new SolidColorBrush(annotation.Color);
+        TextInputBox.Foreground = new SolidColorBrush(
+            annotation.Type == ToolType.Text ? annotation.Color : annotation.LabelColor);
         _currentTextHAlign = annotation.TextHAlign;
         _currentTextVAlign = annotation.TextVAlign;
         TextInputBox.TextAlignment = annotation.TextHAlign switch

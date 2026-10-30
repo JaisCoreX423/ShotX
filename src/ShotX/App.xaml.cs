@@ -552,6 +552,24 @@ public partial class App : Application
             return true;
         }
 
+        if (args.Contains("--test-shape-label-color"))
+        {
+            var image = TestImageFactory.CreateSampleScreenshot();
+            var editor = new EditorWindow(image, "Captura de prueba");
+            editor.Show();
+            editor.AddSampleAnnotationsForTesting();
+            editor.SimulateShapeLabelColorForTesting(System.Windows.Media.Color.FromRgb(0x0A, 0x84, 0xFF)); // blue label, red outline
+            editor.ContentRendered += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    DiagSnapshot.Capture(editor, "editor-window-shape-label-color");
+                    Shutdown();
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            };
+            return true;
+        }
+
         if (args.Contains("--test-text-align"))
         {
             var image = TestImageFactory.CreateSampleScreenshot();
