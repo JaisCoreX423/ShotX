@@ -41,6 +41,7 @@ public class AppSettings
     public bool AutoOpenEditor { get; set; } = true;
     public bool PlayCaptureSound { get; set; } = true;
     public bool StartWithWindows { get; set; } = true;
+    public bool AutoUpdate { get; set; } = true;
 
     public HotkeyBinding RegionHotkey { get; set; } = new(ModifierKeys.None, Key.PrintScreen);
     public HotkeyBinding FullScreenHotkey { get; set; } = new(ModifierKeys.Control, Key.PrintScreen);

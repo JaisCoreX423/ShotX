@@ -38,7 +38,13 @@ public partial class SettingsWindow : Window
 
         _initializing = false;
         Loaded += (_, _) => PlayOpenAnimation();
+
+        UpdateService.Instance.StateChanged += OnUpdateStateChanged;
+        Closed += (_, _) => UpdateService.Instance.StateChanged -= OnUpdateStateChanged;
+        RefreshUpdateUi();
     }
+
+    private void OnUpdateStateChanged() => Dispatcher.Invoke(RefreshUpdateUi);
 
     private void ApplyLocalization()
     {
@@ -60,6 +66,9 @@ public partial class SettingsWindow : Window
         ChooseFolderButton.Content = Loc.T("settings.chooseFolder");
         StartupHeader.Text = Loc.T("settings.startup");
         StartWithWindowsLabel.Text = Loc.T("settings.startWithWindows");
+        UpdatesHeader.Text = Loc.T("settings.updates");
+        AutoUpdateLabel.Text = Loc.T("settings.autoUpdate");
+        CheckUpdatesButton.Content = Loc.T("settings.checkUpdates");
         CloseButton.ToolTip = Loc.T("window.close");
 
         foreach (var (theme, button) in _themeButtons)
@@ -266,6 +275,7 @@ public partial class SettingsWindow : Window
         PlaySoundCheck.IsChecked = _settings.PlayCaptureSound;
         StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
         SaveFolderBox.Text = _settings.SaveFolder;
+        AutoUpdateCheck.IsChecked = _settings.AutoUpdate;
     }
 
     private void WireChangeHandlers()
@@ -289,7 +299,29 @@ public partial class SettingsWindow : Window
             _settings.StartWithWindows = false;
             StartupService.Unregister();
         });
+
+        AutoUpdateCheck.Checked += (_, _) => SaveIfReady(() => _settings.AutoUpdate = true);
+        AutoUpdateCheck.Unchecked += (_, _) => SaveIfReady(() => _settings.AutoUpdate = false);
     }
+
+    // ---------- Updates ----------
+
+    private void RefreshUpdateUi()
+    {
+        var updates = UpdateService.Instance;
+        UpdateStatusText.Text = updates.StatusText;
+
+        var busy = updates.State is UpdateState.Checking or UpdateState.Downloading or UpdateState.Installing;
+        CheckUpdatesButton.IsEnabled = !busy;
+
+        var canInstall = updates.State is UpdateState.Available or UpdateState.ReadyToInstall;
+        InstallUpdateButton.Visibility = canInstall ? Visibility.Visible : Visibility.Collapsed;
+        InstallUpdateButton.Content = string.Format(Loc.T("settings.installUpdate"), updates.LatestVersionText);
+    }
+
+    private async void OnCheckUpdatesClick(object sender, RoutedEventArgs e) => await UpdateService.Instance.CheckNowAsync();
+
+    private async void OnInstallUpdateClick(object sender, RoutedEventArgs e) => await UpdateService.Instance.InstallNowAsync();
 
     private void SaveIfReady(Action apply)
     {

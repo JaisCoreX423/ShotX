@@ -146,5 +146,9 @@ public static class Loc
         ["settings.chooseFolderDialogTitle"] = ("Elegir carpeta para guardar capturas", "Choose folder to save screenshots"),
         ["settings.startup"] = ("Inicio", "Startup"),
         ["settings.startWithWindows"] = ("Iniciar ShotX con Windows", "Start ShotX with Windows"),
+        ["settings.updates"] = ("Actualizaciones", "Updates"),
+        ["settings.autoUpdate"] = ("Instalar actualizaciones automáticamente", "Install updates automatically"),
+        ["settings.checkUpdates"] = ("Buscar ahora", "Check now"),
+        ["settings.installUpdate"] = ("Instalar {0}", "Install {0}"),
     };
 }

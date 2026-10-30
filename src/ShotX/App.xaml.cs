@@ -114,6 +114,10 @@ public partial class App : Application
             StartupService.Register();
         }
 
+        UpdateService.Instance.IsIdle = () => _mainWindow is not { IsVisible: true };
+        UpdateService.Instance.RequestShutdown = () => Dispatcher.BeginInvoke(new Action(Shutdown));
+        UpdateService.Instance.Start();
+
         if (!e.Args.Contains("--background"))
         {
             ShowMainWindow();
