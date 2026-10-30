@@ -112,7 +112,10 @@ public partial class EditorWindow : Window
         _canvas.StrokeColor = _currentColor;
         _canvas.StrokeThickness = remembered.LastThickness;
         _canvas.FillColor = _currentTextBackground;
-        CanvasContainer.Children.Add(_canvas);
+        // Insert at the bottom of CanvasContainer's z-order — TextInputBox/CropConfirmPanel are
+        // declared ahead of it in XAML (so InitializeComponent adds them first) and must stay
+        // visually on top of the canvas they overlay.
+        CanvasContainer.Children.Insert(0, _canvas);
 
         _canvas.Changed += (_, _) =>
         {
@@ -281,6 +284,19 @@ public partial class EditorWindow : Window
         OnTextEditRequested(shape);
         TextInputBox.Text = text;
         CommitTextInput();
+    }
+
+    /// <summary>Opens a rectangle's label editor and leaves it open (no commit) — for snapshotting
+    /// the box itself mid-edit, e.g. to confirm its background doesn't hide the shape underneath.</summary>
+    public void SimulateOpenShapeLabelEditForTesting()
+    {
+        var rect = _canvas.Annotations.FirstOrDefault(a => a.Type == ToolType.Rectangle);
+        if (rect == null) return;
+        // Give it a fill first — an opaque edit-box background would be obvious against it.
+        _canvas.SelectAnnotationExternally(rect);
+        _canvas.ApplyFillToSelection(Color.FromRgb(0xFF, 0xCC, 0x00));
+        OnTextEditRequested(rect);
+        TextInputBox.Text = "Dentro";
     }
 
     /// <summary>Gives a rectangle a label, then sets the label's color to something different from
@@ -1088,6 +1104,15 @@ public partial class EditorWindow : Window
     private Point _textInputOrigin;
     private Annotation? _editingTextAnnotation;
 
+    /// <summary>Converts a canvas-local point — the space <see cref="Annotation.Bounds"/> lives in —
+    /// into CanvasContainer-local coordinates, the space the text box/crop-confirm overlay controls
+    /// are positioned in via Margin. The two aren't the same point whenever the canvas renders
+    /// smaller than CanvasContainer's own allotted space (it then centers within it, e.g. any time
+    /// the screenshot is narrower/shorter than the maximized editor window) — using a canvas-local
+    /// point as an overlay control's raw Margin then drifts it away from the shape/selection it's
+    /// supposed to sit over by exactly that centering offset.</summary>
+    private Point CanvasToOverlay(Point canvasLocalPoint) => _canvas.TranslatePoint(canvasLocalPoint, CanvasContainer);
+
     /// <summary>Shows the big text box centered in the currently visible part of the canvas, so
     /// picking the Text tool is enough to start typing — no precise click needed first.</summary>
     private void ShowCenteredTextBox()
@@ -1111,6 +1136,7 @@ public partial class EditorWindow : Window
         TextInputBox.Text = string.Empty;
         TextInputBox.FontSize = _currentFontSize;
         TextInputBox.Foreground = new SolidColorBrush(_currentColor);
+        TextInputBox.Background = Brushes.White;
         TextInputBox.Width = TextBoxDefaultWidth;
         TextInputBox.Height = TextBoxDefaultHeight;
         TextInputBox.TextAlignment = _currentTextHAlign switch
@@ -1125,7 +1151,8 @@ public partial class EditorWindow : Window
             TextVAlign.Bottom => System.Windows.VerticalAlignment.Bottom,
             _ => System.Windows.VerticalAlignment.Center
         };
-        TextInputBox.Margin = new Thickness(location.X, location.Y, 0, 0);
+        var overlayLocation = CanvasToOverlay(location);
+        TextInputBox.Margin = new Thickness(overlayLocation.X, overlayLocation.Y, 0, 0);
         TextInputBox.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
         TextInputBox.VerticalAlignment = System.Windows.VerticalAlignment.Top;
         TextInputBox.Visibility = Visibility.Visible;
@@ -1178,16 +1205,21 @@ public partial class EditorWindow : Window
 
         if (annotation.Type == ToolType.Text)
         {
+            TextInputBox.Background = Brushes.White;
             LoadTextBackgroundIntoControls(annotation.BackgroundColor);
             TextInputBox.Width = Math.Max(TextBoxDefaultWidth, annotation.Bounds.Width);
             TextInputBox.Height = Math.Max(TextBoxDefaultHeight, annotation.Bounds.Height);
         }
         else
         {
+            // A shape's own fill/outline should stay visible while typing its label — an opaque
+            // white box here would cover the shape entirely and look like a second one on top of it.
+            TextInputBox.Background = Brushes.Transparent;
             TextInputBox.Width = annotation.Bounds.Width;
             TextInputBox.Height = annotation.Bounds.Height;
         }
-        TextInputBox.Margin = new Thickness(_textInputOrigin.X, _textInputOrigin.Y, 0, 0);
+        var overlayOrigin = CanvasToOverlay(_textInputOrigin);
+        TextInputBox.Margin = new Thickness(overlayOrigin.X, overlayOrigin.Y, 0, 0);
         TextInputBox.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
         TextInputBox.VerticalAlignment = System.Windows.VerticalAlignment.Top;
         TextInputBox.Visibility = Visibility.Visible;
@@ -1254,8 +1286,9 @@ public partial class EditorWindow : Window
     {
         if (rect is { } r)
         {
+            var overlayOrigin = CanvasToOverlay(new Point(r.X, r.Bottom + 8));
             CropConfirmPanel.Visibility = Visibility.Visible;
-            CropConfirmPanel.Margin = new Thickness(r.X, r.Bottom + 8, 0, 0);
+            CropConfirmPanel.Margin = new Thickness(overlayOrigin.X, overlayOrigin.Y, 0, 0);
         }
         else
         {

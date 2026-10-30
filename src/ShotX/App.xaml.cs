@@ -552,6 +552,24 @@ public partial class App : Application
             return true;
         }
 
+        if (args.Contains("--test-shape-label-background"))
+        {
+            var image = TestImageFactory.CreateSampleScreenshot();
+            var editor = new EditorWindow(image, "Captura de prueba");
+            editor.Show();
+            editor.AddSampleAnnotationsForTesting();
+            editor.SimulateOpenShapeLabelEditForTesting();
+            editor.ContentRendered += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    DiagSnapshot.Capture(editor, "editor-window-shape-label-background");
+                    Shutdown();
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            };
+            return true;
+        }
+
         if (args.Contains("--test-shape-label-color"))
         {
             var image = TestImageFactory.CreateSampleScreenshot();

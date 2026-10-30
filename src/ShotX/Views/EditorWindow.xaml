@@ -61,25 +61,31 @@
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="24" ShadowDepth="2" Opacity="0.25" Color="Black" />
                         </Border.Effect>
-                        <Grid x:Name="CanvasContainer" />
+                        <!-- TextInputBox/CropConfirmPanel live INSIDE CanvasContainer, not as its
+                             siblings in CanvasHost: whenever the canvas is narrower than the
+                             available space, WPF centers the fixed-size canvas control within this
+                             Grid, and anything positioned by raw canvas-space coordinates (Margin =
+                             an annotation's Bounds) must share that same centered coordinate frame
+                             or it drifts away from the shape it's meant to overlay. -->
+                        <Grid x:Name="CanvasContainer">
+                            <TextBox x:Name="TextInputBox" Visibility="Collapsed" BorderThickness="2" Padding="6,4"
+                                     MinWidth="180" MinHeight="34" Background="White" BorderBrush="#0A84FF"
+                                     AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     FontFamily="Segoe UI" FontSize="20"
+                                     KeyDown="OnTextInputKeyDown" LostFocus="OnTextInputLostFocus">
+                                <TextBox.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="1" Opacity="0.35" Color="Black" />
+                                </TextBox.Effect>
+                            </TextBox>
+
+                            <StackPanel x:Name="CropConfirmPanel" Orientation="Horizontal" Visibility="Collapsed"
+                                        HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <Button x:Name="ApplyCropButton" Style="{StaticResource PillButtonStyle}" Margin="0,0,6,0" Click="OnApplyCropClick" />
+                                <Button x:Name="CancelCropButton" Style="{StaticResource GhostPillButtonStyle}" Click="OnCancelCropClick" />
+                            </StackPanel>
+                        </Grid>
                     </Border>
-
-                    <TextBox x:Name="TextInputBox" Visibility="Collapsed" BorderThickness="2" Padding="6,4"
-                             MinWidth="180" MinHeight="34" Background="White" BorderBrush="#0A84FF"
-                             AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Auto"
-                             FontFamily="Segoe UI" FontSize="20"
-                             KeyDown="OnTextInputKeyDown" LostFocus="OnTextInputLostFocus">
-                        <TextBox.Effect>
-                            <DropShadowEffect BlurRadius="10" ShadowDepth="1" Opacity="0.35" Color="Black" />
-                        </TextBox.Effect>
-                    </TextBox>
-
-                    <StackPanel x:Name="CropConfirmPanel" Orientation="Horizontal" Visibility="Collapsed"
-                                HorizontalAlignment="Left" VerticalAlignment="Top">
-                        <Button x:Name="ApplyCropButton" Style="{StaticResource PillButtonStyle}" Margin="0,0,6,0" Click="OnApplyCropClick" />
-                        <Button x:Name="CancelCropButton" Style="{StaticResource GhostPillButtonStyle}" Click="OnCancelCropClick" />
-                    </StackPanel>
                 </Grid>
             </ScrollViewer>
         </Border>
