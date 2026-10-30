@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>Assets\shotx.ico</ApplicationIcon>
+    <AssemblyName>ShotX</AssemblyName>
+    <RootNamespace>ShotX</RootNamespace>
+    <Version>1.0.0</Version>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <StartupObject>ShotX.App</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\shotx.ico" />
+  </ItemGroup>
+
+</Project>
