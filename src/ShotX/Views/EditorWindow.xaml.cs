@@ -185,8 +185,8 @@ public partial class EditorWindow : Window
         CommitTextInput();
         if (_canvas.Selected is { } annotation)
         {
+            // Resizing no longer touches FontSize — it stays exactly as typed, same as a shape's label.
             annotation.Bounds = new Rect(annotation.Bounds.X, annotation.Bounds.Y, annotation.Bounds.Width + 120, annotation.Bounds.Height + 60);
-            annotation.FontSize = Math.Max(8, annotation.Bounds.Height * 0.55);
         }
     }
 

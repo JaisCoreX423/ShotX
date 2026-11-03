@@ -796,7 +796,6 @@ public class DrawingCanvasControl : FrameworkElement
             var b = _selected.Bounds;
             _selected.Bounds = new Rect(b.X, b.Y, Math.Max(4, p.X - b.X), Math.Max(4, p.Y - b.Y));
             if (_selected.Type == ToolType.Blur) RecomputeBlur(_selected);
-            if (_selected.Type == ToolType.Text) _selected.FontSize = Math.Max(8, _selected.Bounds.Height * 0.55);
             InvalidateVisual();
             return;
         }
