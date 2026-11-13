@@ -499,6 +499,23 @@ public partial class App : Application
             return true;
         }
 
+        if (args.Contains("--test-left-drag-rectangle"))
+        {
+            var image = TestImageFactory.CreateSampleScreenshot();
+            var editor = new EditorWindow(image, "Captura de prueba");
+            editor.Show();
+            editor.SimulateLeftDragRectangleForTesting();
+            editor.ContentRendered += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    DiagSnapshot.Capture(editor, "editor-window-left-drag-rectangle");
+                    Shutdown();
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            };
+            return true;
+        }
+
         if (args.Contains("--test-type-to-edit-shape"))
         {
             var image = TestImageFactory.CreateSampleScreenshot();

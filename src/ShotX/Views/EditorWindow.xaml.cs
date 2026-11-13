@@ -226,6 +226,15 @@ public partial class EditorWindow : Window
 
     public void SimulateCropDragInProgressForTesting() => _canvas.SimulateCropDragInProgressForTesting(new Rect(120, 100, 400, 260));
 
+    /// <summary>Drags a Rectangle from (400,350) up-and-left to (150,150) in several steps —
+    /// the exact direction that used to break (dragging down-right never exposed the bug).</summary>
+    public void SimulateLeftDragRectangleForTesting()
+    {
+        _canvas.SimulateMultiStepShapeDragForTesting(ToolType.Rectangle, new Point(400, 350),
+            new Point(390, 340), new Point(300, 260), new Point(200, 180), new Point(150, 150));
+        _canvas.FinishMultiStepShapeDragForTesting();
+    }
+
     public void SimulateColorApplyToSelectionForTesting()
     {
         var rect = _canvas.Annotations.FirstOrDefault(a => a.Type == ToolType.Rectangle);

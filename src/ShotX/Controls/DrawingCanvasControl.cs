@@ -79,6 +79,43 @@ public class DrawingCanvasControl : FrameworkElement
         InvalidateVisual();
     }
 
+    /// <summary>Drives a multi-step Rectangle/Ellipse drag through the exact same bounds-normalizing
+    /// logic <see cref="OnMouseMove"/> uses (<see cref="NormalizeDragBounds"/>), one mouse-move step
+    /// per point in <paramref name="path"/> — reproduces a real drag's incremental calls instead of
+    /// just setting the final Bounds directly, which is what let the left/up-drag bug through
+    /// undetected originally (every prior test only ever set Bounds once, in a single step).</summary>
+    public void SimulateMultiStepShapeDragForTesting(ToolType tool, Point down, params Point[] path)
+    {
+        CurrentTool = tool;
+        _lastMouse = down;
+        _inProgress = new Annotation
+        {
+            Type = tool,
+            Color = StrokeColor,
+            Thickness = StrokeThickness,
+            Bounds = new Rect(down, new Size(0, 0)),
+            BackgroundColor = tool is ToolType.Rectangle or ToolType.Ellipse ? FillColor : Colors.Transparent
+        };
+        foreach (var p in path) _inProgress.Bounds = NormalizeDragBounds(p);
+    }
+
+    public Rect? InProgressBoundsForTesting => _inProgress?.Bounds;
+
+    /// <summary>Finishes the shape started by <see cref="SimulateMultiStepShapeDragForTesting"/>,
+    /// same finalization <see cref="OnMouseLeftButtonUp"/> applies (too-small-to-keep check, add to
+    /// the annotation list, select it).</summary>
+    public void FinishMultiStepShapeDragForTesting()
+    {
+        if (_inProgress == null) return;
+        var finished = _inProgress;
+        _inProgress = null;
+        if (finished.Bounds.Width < 3 || finished.Bounds.Height < 3) return;
+        PushUndo();
+        _annotations.Add(finished);
+        _selected = finished;
+        Raise();
+    }
+
     /// <summary>Adds one rectangle using the canvas's current StrokeColor/StrokeThickness/FillColor,
     /// as a stand-in for actually drawing one with the mouse — used only to verify those "current
     /// defaults" (incl. persisted ones) actually reach a newly created shape.</summary>
@@ -780,6 +817,18 @@ public class DrawingCanvasControl : FrameworkElement
         CaptureMouse();
     }
 
+    /// <summary>Normalizes a drag from the fixed mouse-down anchor (<see cref="_lastMouse"/>) to
+    /// <paramref name="current"/> into a non-negative Rect — used by both the Crop and the
+    /// generic Rectangle/Ellipse/etc. drag-in-progress paths in <see cref="OnMouseMove"/>.
+    /// Deliberately reads the anchor from <see cref="_lastMouse"/>, never from the in-progress
+    /// annotation's own Bounds.TopLeft: that gets overwritten on every call to whatever the current
+    /// min corner is, so reading it back next time would silently slide the anchor along with the
+    /// shrinking edge — which is exactly what made dragging up/left broken while dragging down/right
+    /// worked fine (TopLeft never changes when dragging down/right, so the bug stayed invisible).</summary>
+    private Rect NormalizeDragBounds(Point current) => new(
+        new Point(Math.Min(_lastMouse.X, current.X), Math.Min(_lastMouse.Y, current.Y)),
+        new Point(Math.Max(_lastMouse.X, current.X), Math.Max(_lastMouse.Y, current.Y)));
+
     protected override void OnMouseMove(MouseEventArgs e)
     {
         var p = e.GetPosition(this);
@@ -815,8 +864,7 @@ public class DrawingCanvasControl : FrameworkElement
 
         if (_inProgress.Type == ToolType.Crop)
         {
-            var start = _inProgress.Bounds.TopLeft;
-            _inProgress.Bounds = new Rect(start, p);
+            _inProgress.Bounds = NormalizeDragBounds(p);
             InvalidateVisual();
             return;
         }
@@ -831,10 +879,7 @@ public class DrawingCanvasControl : FrameworkElement
         }
         else
         {
-            var start = _inProgress.Bounds.TopLeft;
-            _inProgress.Bounds = new Rect(
-                new Point(Math.Min(start.X, p.X), Math.Min(start.Y, p.Y)),
-                new Point(Math.Max(start.X, p.X), Math.Max(start.Y, p.Y)));
+            _inProgress.Bounds = NormalizeDragBounds(p);
         }
         InvalidateVisual();
     }

@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\shotx.ico</ApplicationIcon>
     <AssemblyName>ShotX</AssemblyName>
     <RootNamespace>ShotX</RootNamespace>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <StartupObject>ShotX.App</StartupObject>
   </PropertyGroup>
