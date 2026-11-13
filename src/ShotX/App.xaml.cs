@@ -29,6 +29,32 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Claude Desktop launches this mode as a command-based MCP server; it's only a relay to the
+        // running app, so it skips everything else (no window, no tray, no single-instance check).
+        if (e.Args.Contains("--mcp-stdio", StringComparer.OrdinalIgnoreCase))
+        {
+            Task.Run(async () =>
+            {
+                int code;
+                try { code = await McpStdioBridge.RunAsync(); }
+                catch (Exception ex) { Logger.Log($"MCP stdio bridge failed: {ex.Message}"); code = 1; }
+                await Dispatcher.InvokeAsync(() => Shutdown(code));
+            });
+            return;
+        }
+
+        // Same effect as Settings > Connect Claude, for scripting/troubleshooting: registers
+        // *this* running exe's path, not an installed copy's.
+        if (e.Args.Contains("--claude-register", StringComparer.OrdinalIgnoreCase))
+        {
+            PathService.EnsureDataRoot();
+            var exePath = Environment.ProcessPath ?? "ShotX.exe";
+            var result = ClaudeIntegration.Register(exePath, SettingsService.Current.McpServerPort);
+            Logger.Log($"--claude-register: desktop={result.Desktop}, code={result.Code}, error={result.DesktopError}");
+            Shutdown(result.AllConnected ? 0 : 1);
+            return;
+        }
+
         DispatcherUnhandledException += (_, ex) =>
         {
             Logger.Log($"UNHANDLED (Dispatcher): {ex.Exception}");
@@ -117,6 +143,14 @@ public partial class App : Application
         UpdateService.Instance.IsIdle = () => _mainWindow is not { IsVisible: true };
         UpdateService.Instance.RequestShutdown = () => Dispatcher.BeginInvoke(new Action(Shutdown));
         UpdateService.Instance.Start();
+
+        McpHostService.Instance.Documents.HideMainWindowIfVisible = () =>
+        {
+            if (_mainWindow is not { IsVisible: true }) return false;
+            _mainWindow.Hide();
+            return true;
+        };
+        if (settings.McpServerEnabled) _ = McpHostService.Instance.StartAsync(settings.McpServerPort);
 
         if (!e.Args.Contains("--background"))
         {
@@ -884,6 +918,7 @@ public partial class App : Application
         if (_mainWindow != null) _mainWindow.ForceClose = true;
         _hotkeyManager?.Dispose();
         _trayIconManager?.Dispose();
+        _ = McpHostService.Instance.StopAsync();
         _showSignal?.Dispose();
         _singleInstanceMutex?.ReleaseMutex();
         base.OnExit(e);

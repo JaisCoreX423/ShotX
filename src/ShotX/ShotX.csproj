@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\shotx.ico</ApplicationIcon>
     <AssemblyName>ShotX</AssemblyName>
     <RootNamespace>ShotX</RootNamespace>
-    <Version>1.0.3</Version>
+    <Version>1.1.0</Version>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <StartupObject>ShotX.App</StartupObject>
   </PropertyGroup>
@@ -18,6 +18,19 @@
   <ItemGroup>
     <Content Include="Assets\shotx.ico" />
     <Resource Include="Assets\shotx-256.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same Claude Desktop / Claude Code hookup the installer uses (Settings > Connect Claude). -->
+    <Compile Include="..\ShotX.Setup\ClaudeIntegration.cs" Link="Services\ClaudeIntegration.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
   </ItemGroup>
 
 </Project>

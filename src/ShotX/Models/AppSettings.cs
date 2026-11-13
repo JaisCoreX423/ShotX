@@ -42,6 +42,8 @@ public class AppSettings
     public bool PlayCaptureSound { get; set; } = true;
     public bool StartWithWindows { get; set; } = true;
     public bool AutoUpdate { get; set; } = true;
+    public bool McpServerEnabled { get; set; } = true;
+    public int McpServerPort { get; set; } = 8788;
 
     public HotkeyBinding RegionHotkey { get; set; } = new(ModifierKeys.None, Key.PrintScreen);
     public HotkeyBinding FullScreenHotkey { get; set; } = new(ModifierKeys.Control, Key.PrintScreen);

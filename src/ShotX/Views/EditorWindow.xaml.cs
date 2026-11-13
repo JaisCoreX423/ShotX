@@ -390,6 +390,25 @@ public partial class EditorWindow : Window
         return new EditorWindow(image, $"{image.PixelWidth} × {image.PixelHeight} · {Loc.T("editor.unsaved")}");
     }
 
+    // ---------- MCP ----------
+
+    /// <summary>The annotation surface, for the MCP server to add/read annotations on directly.</summary>
+    public DrawingCanvasControl Canvas => _canvas;
+
+    /// <summary>Saves (same flattening as Save/Save As) to an explicit path, or — when none is
+    /// given — the same default the toolbar's Save button would use. Returns the path actually used.</summary>
+    public string SaveForMcp(string? path = null)
+    {
+        var settings = SettingsService.Current;
+        Directory.CreateDirectory(settings.SaveFolder);
+        var target = path ?? _savedFilePath ?? Path.Combine(settings.SaveFolder, $"ShotX_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+        SaveToFile(target);
+        _savedFilePath = target;
+        _hasUnsavedChanges = false;
+        StatusText.Text = string.Format(Loc.T("editor.savedAt"), target);
+        return target;
+    }
+
     private void PlayOpenAnimation()
     {
         Opacity = 0;

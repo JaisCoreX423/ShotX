@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
+using ShotX;
 using ShotX.Models;
 using ShotX.Services;
 using Button = System.Windows.Controls.Button;
@@ -43,6 +44,7 @@ public partial class SettingsWindow : Window
         UpdateService.Instance.StateChanged += OnUpdateStateChanged;
         Closed += (_, _) => UpdateService.Instance.StateChanged -= OnUpdateStateChanged;
         RefreshUpdateUi();
+        RefreshMcpStatus();
     }
 
     private void OnUpdateStateChanged() => Dispatcher.Invoke(RefreshUpdateUi);
@@ -70,6 +72,9 @@ public partial class SettingsWindow : Window
         UpdatesHeader.Text = Loc.T("settings.updates");
         AutoUpdateLabel.Text = Loc.T("settings.autoUpdate");
         CheckUpdatesButton.Content = Loc.T("settings.checkUpdates");
+        McpHeader.Text = Loc.T("settings.mcp");
+        McpEnabledLabel.Text = Loc.T("settings.mcpEnabled");
+        ClaudeCodeHintLabel.Text = Loc.T("settings.claudeCodeHint");
         AboutHeader.Text = Loc.T("settings.about");
         VersionRun.Text = $" {AppInfo.VersionText}";
         CreditsText.Text = AppInfo.Credits;
@@ -281,6 +286,7 @@ public partial class SettingsWindow : Window
         StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
         SaveFolderBox.Text = _settings.SaveFolder;
         AutoUpdateCheck.IsChecked = _settings.AutoUpdate;
+        McpEnabledCheck.IsChecked = _settings.McpServerEnabled;
     }
 
     private void WireChangeHandlers()
@@ -307,6 +313,83 @@ public partial class SettingsWindow : Window
 
         AutoUpdateCheck.Checked += (_, _) => SaveIfReady(() => _settings.AutoUpdate = true);
         AutoUpdateCheck.Unchecked += (_, _) => SaveIfReady(() => _settings.AutoUpdate = false);
+
+        McpEnabledCheck.Checked += async (_, _) => await OnMcpEnabledChanged(true);
+        McpEnabledCheck.Unchecked += async (_, _) => await OnMcpEnabledChanged(false);
+    }
+
+    // ---------- MCP server / Claude ----------
+
+    private async Task OnMcpEnabledChanged(bool enabled)
+    {
+        if (_initializing) return;
+        _settings.McpServerEnabled = enabled;
+        SettingsService.Save(_settings);
+        if (enabled) await McpHostService.Instance.StartAsync(_settings.McpServerPort);
+        else await McpHostService.Instance.StopAsync();
+        RefreshMcpStatus();
+    }
+
+    private void RefreshMcpStatus()
+    {
+        var mcp = McpHostService.Instance;
+        McpStatusText.Text = !_settings.McpServerEnabled
+            ? Loc.T("settings.mcpDisabled")
+            : mcp.IsRunning
+                ? string.Format(Loc.T("settings.mcpRunning"), $"http://127.0.0.1:{mcp.Port}/mcp")
+                : string.Format(Loc.T("settings.mcpNotRunning"), mcp.LastError ?? "?");
+
+        var port = _settings.McpServerPort;
+        var (desktop, code) = ClaudeIntegration.GetStatus(port);
+
+        static string Describe(string name, ClaudeClientState state) => state switch
+        {
+            ClaudeClientState.Connected => $"{name}: ✓",
+            ClaudeClientState.WrongPort => $"{name}: otro puerto",
+            ClaudeClientState.Missing => $"{name}: —",
+            _ => $"{name}: —"
+        };
+
+        ClaudeStatusText.Text = $"{Describe("Claude Desktop", desktop)}   {Describe("Claude Code", code)}";
+        ConnectClaudeButton.Content = Loc.T("settings.connectClaude");
+        ClaudeCodeCommandBox.Text = ClaudeIntegration.ClaudeCodeCommand(port);
+    }
+
+    private async void OnConnectClaudeClick(object sender, RoutedEventArgs e)
+    {
+        ConnectClaudeButton.IsEnabled = false;
+        try
+        {
+            var exePath = Environment.ProcessPath ?? "ShotX.exe";
+            var port = _settings.McpServerPort;
+            var result = await Task.Run(() => ClaudeIntegration.Register(exePath, port));
+
+            if (result.DesktopError != null)
+            {
+                System.Windows.MessageBox.Show(this, $"No se pudo conectar Claude Desktop: {result.DesktopError}.",
+                    "ShotX", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else if (result.DesktopChanged && ClaudeIntegration.IsDesktopRunning())
+            {
+                if (System.Windows.MessageBox.Show(this,
+                        "ShotX se conectó a Claude Desktop. ¿Reiniciarlo ahora para que lo cargue?",
+                        "ShotX", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    await Task.Run(ClaudeIntegration.RestartDesktop);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"Connect Claude failed: {ex.Message}");
+            System.Windows.MessageBox.Show(this, $"No se pudo conectar Claude: {ex.Message}", "ShotX",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            ConnectClaudeButton.IsEnabled = true;
+            RefreshMcpStatus();
+        }
     }
 
     // ---------- Updates ----------

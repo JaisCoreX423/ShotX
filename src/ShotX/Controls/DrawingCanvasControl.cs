@@ -227,6 +227,111 @@ public class DrawingCanvasControl : FrameworkElement
         Raise();
     }
 
+    // ---------- Programmatic annotations (fully specified, no mouse/current-tool involved —
+    // used by the MCP server, where every call is stateless and must say exactly what it wants) ----------
+
+    public Annotation AddRectangle(Rect bounds, Color color, double thickness, Color? fill = null,
+        string text = "", Color? labelColor = null)
+    {
+        PushUndo();
+        var annotation = new Annotation
+        {
+            Type = ToolType.Rectangle,
+            Bounds = bounds,
+            Color = color,
+            Thickness = thickness,
+            BackgroundColor = fill ?? Colors.Transparent,
+            Text = text
+        };
+        if (labelColor.HasValue) annotation.LabelColor = labelColor.Value;
+        _annotations.Add(annotation);
+        _selected = annotation;
+        Raise();
+        return annotation;
+    }
+
+    public Annotation AddEllipse(Rect bounds, Color color, double thickness, Color? fill = null,
+        string text = "", Color? labelColor = null)
+    {
+        PushUndo();
+        var annotation = new Annotation
+        {
+            Type = ToolType.Ellipse,
+            Bounds = bounds,
+            Color = color,
+            Thickness = thickness,
+            BackgroundColor = fill ?? Colors.Transparent,
+            Text = text
+        };
+        if (labelColor.HasValue) annotation.LabelColor = labelColor.Value;
+        _annotations.Add(annotation);
+        _selected = annotation;
+        Raise();
+        return annotation;
+    }
+
+    public Annotation AddLine(Point from, Point to, Color color, double thickness)
+    {
+        PushUndo();
+        var annotation = new Annotation { Type = ToolType.Line, Color = color, Thickness = thickness };
+        annotation.Points.Add(from);
+        annotation.Points.Add(to);
+        _annotations.Add(annotation);
+        _selected = annotation;
+        Raise();
+        return annotation;
+    }
+
+    public Annotation AddArrow(Point from, Point to, Color color, double thickness)
+    {
+        PushUndo();
+        var annotation = new Annotation { Type = ToolType.Arrow, Color = color, Thickness = thickness };
+        annotation.Points.Add(from);
+        annotation.Points.Add(to);
+        _annotations.Add(annotation);
+        _selected = annotation;
+        Raise();
+        return annotation;
+    }
+
+    public Annotation AddHighlighter(IEnumerable<Point> points, Color color, double thickness)
+    {
+        PushUndo();
+        var annotation = new Annotation { Type = ToolType.Highlighter, Color = color, Thickness = thickness };
+        annotation.Points.AddRange(points);
+        _annotations.Add(annotation);
+        _selected = annotation;
+        Raise();
+        return annotation;
+    }
+
+    public Annotation AddStepNumber(Point center, Color color, double radius = 13)
+    {
+        PushUndo();
+        var annotation = new Annotation
+        {
+            Type = ToolType.StepNumber,
+            Bounds = new Rect(center.X - radius, center.Y - radius, radius * 2, radius * 2),
+            Color = color,
+            StepIndex = _nextStepNumber++
+        };
+        _annotations.Add(annotation);
+        _selected = annotation;
+        Raise();
+        return annotation;
+    }
+
+    public Annotation AddBlurRegion(Rect bounds, double tileSize = 8)
+    {
+        PushUndo();
+        var annotation = new Annotation { Type = ToolType.Blur, Bounds = bounds, Thickness = tileSize };
+        RecomputeBlur(annotation);
+        _annotations.Add(annotation);
+        _selected = annotation;
+        Raise();
+        return annotation;
+    }
+
     public void UpdateTextAnnotation(Annotation annotation, string text, Rect bounds, double fontSize, Color color,
         Color backgroundColor, TextHAlign hAlign, TextVAlign vAlign)
     {

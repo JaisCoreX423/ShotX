@@ -152,5 +152,12 @@ public static class Loc
         ["settings.checkUpdates"] = ("Buscar ahora", "Check now"),
         ["settings.installUpdate"] = ("Instalar {0}", "Install {0}"),
         ["settings.about"] = ("Acerca de", "About"),
+        ["settings.mcp"] = ("Acceso de IA (servidor MCP)", "AI access (MCP server)"),
+        ["settings.mcpEnabled"] = ("Activar servidor MCP", "Enable MCP server"),
+        ["settings.mcpRunning"] = ("Corriendo en {0}", "Running at {0}"),
+        ["settings.mcpNotRunning"] = ("No está corriendo: {0}", "Not running: {0}"),
+        ["settings.mcpDisabled"] = ("Desactivado", "Disabled"),
+        ["settings.connectClaude"] = ("Conectar Claude", "Connect Claude"),
+        ["settings.claudeCodeHint"] = ("O conéctalo desde Claude Code con:", "Or connect it from Claude Code with:"),
     };
 }
